@@ -141,12 +141,12 @@ def 利用可能文字一覧
 			end
 			c = aline[col]
 			if c
-				if c.ord == code + i
+				truec = (code + i).chr(Encoding::UTF_8)
+				if c == truec
 					$eltax_charset[c] = true
 				elsif c == "・" # 入力可能ですが、画面上表示できない文字(とは一体!?)
-					$eltax_charset[c] = "Invisible"
+					$eltax_charset[truec] = "Invisible"
 				else
-					truec = (code + i).chr(Encoding::UTF_8)
 					aline[col, 1] = truec
 					# print("#{c} (#{c.ord.to_s(16)}) != #{truec} (#{(code + i).to_s(16)})\n")
 				end
