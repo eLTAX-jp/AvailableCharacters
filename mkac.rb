@@ -7,9 +7,9 @@
 
 require 'json'
 
-def 利用可能文字一覧
+def 利用可能文字一覧_一般
 	# 成果物ハッシュ
-	$eltax_charset = {}
+	charset = {}
 
 	# 入力は利用可能文字一覧のPDFをChromeで開いて全選択して得られるテキスト
 	# https://www.eltax.lta.go.jp/documents/00114
@@ -143,9 +143,9 @@ def 利用可能文字一覧
 			if c
 				truec = (code + i).chr(Encoding::UTF_8)
 				if c == truec
-					$eltax_charset[c] = true
+					charset[c] = true
 				elsif c == "・" # 入力可能ですが、画面上表示できない文字(とは一体!?)
-					$eltax_charset[truec] = "Invisible"
+					charset[truec] = "Invisible"
 				else
 					aline[col, 1] = truec
 					# print("#{c} (#{c.ord.to_s(16)}) != #{truec} (#{(code + i).to_s(16)})\n")
@@ -171,12 +171,87 @@ def 利用可能文字一覧
 	# 	end
 	# end
 
-	File.write("eltax_charset.txt", text, external_encoding:"UTF-8")
-	File.write("eltax_charset.json", $eltax_charset.to_json(ascii_only:true), external_encoding:"UTF-8")
+	# ソート
+	charset = charset.sort.to_h
+
+	File.write("general.txt", text, external_encoding:"UTF-8")
+	File.write("docs/general.json", charset.to_json(ascii_only:true), external_encoding:"UTF-8")
+end
+
+def 利用可能文字一覧_口座カナ
+	# 成果物ハッシュ
+	charset = {}
+
+	# 入力はeLTAX HPの「利用者名（カナ）」で使用可能な文字
+	# https://www.eltax.lta.go.jp/kyoutsuunouzei/gaiyou/
+	text = "０１２３４５６７８９"
+	text += "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
+	text += "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン"
+	text += "゛゜"
+	text += "￥，．「」（）－／"
+	text += "　"
+
+	# JSON object生成
+	text.each_char do |c|
+		charset[c] = true
+	end
+
+	# ソート
+	charset = charset.sort.to_h
+
+	File.write("docs/kouza_kana.json", charset.to_json(ascii_only:true), external_encoding:"UTF-8")
+end
+
+# JIS X 0208区点コードに対する文字を得る
+def genjischar(ku, tn)
+	pic = "あ".encode(Encoding::ISO_2022_JP).force_encoding(Encoding::BINARY)
+	abort "Something Wring"  if pic.length != 8
+
+	pic[3] = (ku + 0x20).chr(Encoding::BINARY)
+	pic[4] = (tn + 0x20).chr(Encoding::BINARY)
+
+	begin
+		pic.force_encoding(Encoding::ISO_2022_JP).encode!(Encoding::UTF_8)
+	rescue Encoding::UndefinedConversionError
+		return nil
+	end
+
+	return pic
+end
+
+def 利用可能文字一覧_口座漢字
+	# 成果物ハッシュ
+	charset = {}
+
+	# 入力はeLTAX HPの「利用者名（漢字）」、「住所」で使用可能な文字
+	# https://www.eltax.lta.go.jp/kyoutsuunouzei/gaiyou/
+	# 文字セットJIS X 0208-1997の範囲の文字のうち、01区～08区(各種記号、英数字、かな)、16区～47区(JIS第一水準漢字)、48区～84区(JIS第二水準漢字)
+	# JIS-X0208-1997 コード表
+	# https://www.pcinfo.jpo.go.jp/site/3_support/pdf/zenkaku.pdf
+	# https://www.asahi-net.or.jp/~ax2s-kmtn/ref/jisx0208.html
+	[1..8, 16..47, 48..84].each do |range|
+		range.each do |ku|
+			(1..94).each do |tn|
+				c = genjischar(ku, tn)
+				if c
+					charset[c] = true
+				end
+			end
+		end
+	end
+
+	# ソート
+	charset = charset.sort.to_h
+
+	File.write("docs/kouza_kanji.json", charset.to_json(ascii_only:true), external_encoding:"UTF-8")
 end
 
 def main(args)
-	利用可能文字一覧
+	利用可能文字一覧_一般
+
+	利用可能文字一覧_口座カナ
+
+	利用可能文字一覧_口座漢字
 
 	return 0
 end
