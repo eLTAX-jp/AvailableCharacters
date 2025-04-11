@@ -164,13 +164,6 @@ def 利用可能文字一覧_一般
 	# 行末をstrip
 	text.gsub!(/\s+\n/, "\n")
 
-	# 文字列長チェック
-	# text.split(/\n/).each do |aline|
-	# 	if aline.length != 6 + 16*2
-	# 		p aline
-	# 	end
-	# end
-
 	# ソート
 	charset = charset.sort.to_h
 
@@ -182,7 +175,7 @@ def 利用可能文字一覧_口座カナ
 	# 成果物ハッシュ
 	charset = {}
 
-	# 入力はeLTAX HPの「利用者名（カナ）」で使用可能な文字
+	# 典拠はeLTAX HPの『「利用者名（カナ）」で使用可能な文字』
 	# https://www.eltax.lta.go.jp/kyoutsuunouzei/gaiyou/
 	text = "０１２３４５６７８９"
 	text += "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
@@ -202,7 +195,7 @@ def 利用可能文字一覧_口座カナ
 	File.write("docs/kouza_kana.json", charset.to_json(ascii_only:true), external_encoding:"UTF-8")
 end
 
-# JIS X 0208区点コードに対する文字を得る
+# JIS X 0208区点コードに対する文字を得る(UTF-8で)
 def genjischar(ku, tn)
 	pic = "あ".encode(Encoding::ISO_2022_JP).force_encoding(Encoding::BINARY)
 	abort "Something Wring"  if pic.length != 8
@@ -223,12 +216,9 @@ def 利用可能文字一覧_口座漢字
 	# 成果物ハッシュ
 	charset = {}
 
-	# 入力はeLTAX HPの「利用者名（漢字）」、「住所」で使用可能な文字
+	# 典拠はeLTAX HPの『「利用者名（漢字）」、「住所」で使用可能な文字』
 	# https://www.eltax.lta.go.jp/kyoutsuunouzei/gaiyou/
 	# 文字セットJIS X 0208-1997の範囲の文字のうち、01区～08区(各種記号、英数字、かな)、16区～47区(JIS第一水準漢字)、48区～84区(JIS第二水準漢字)
-	# JIS-X0208-1997 コード表
-	# https://www.pcinfo.jpo.go.jp/site/3_support/pdf/zenkaku.pdf
-	# https://www.asahi-net.or.jp/~ax2s-kmtn/ref/jisx0208.html
 	[1..8, 16..47, 48..84].each do |range|
 		range.each do |ku|
 			(1..94).each do |tn|
